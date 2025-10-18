@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      adaptive_mfa_events: {
+        Row: {
+          challenge_id: string | null
+          context_data: Json
+          created_at: string
+          device_fingerprint: string | null
+          event_type: string
+          failure_reason: string | null
+          geolocation: Json | null
+          id: string
+          ip_address: unknown | null
+          mfa_method: string | null
+          required_mfa_level: string
+          risk_factors: Json
+          risk_level: string
+          risk_score: number
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          challenge_id?: string | null
+          context_data?: Json
+          created_at?: string
+          device_fingerprint?: string | null
+          event_type: string
+          failure_reason?: string | null
+          geolocation?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          mfa_method?: string | null
+          required_mfa_level: string
+          risk_factors?: Json
+          risk_level: string
+          risk_score: number
+          success?: boolean
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string | null
+          context_data?: Json
+          created_at?: string
+          device_fingerprint?: string | null
+          event_type?: string
+          failure_reason?: string | null
+          geolocation?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          mfa_method?: string | null
+          required_mfa_level?: string
+          risk_factors?: Json
+          risk_level?: string
+          risk_score?: number
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       api_rate_limit_logs: {
         Row: {
           api_key_id: string | null
@@ -1075,6 +1132,159 @@ export type Database = {
           target_group_ids?: string[] | null
           target_user_ids?: string[] | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      jit_access_policies: {
+        Row: {
+          allowed_access_levels: string[]
+          approver_role: string | null
+          auto_approve: boolean
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          max_duration: unknown
+          policy_rules: Json
+          requires_approval: boolean
+          resource_type: string
+          risk_level: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_access_levels: string[]
+          approver_role?: string | null
+          auto_approve?: boolean
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          max_duration?: unknown
+          policy_rules?: Json
+          requires_approval?: boolean
+          resource_type: string
+          risk_level: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_access_levels?: string[]
+          approver_role?: string | null
+          auto_approve?: boolean
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          max_duration?: unknown
+          policy_rules?: Json
+          requires_approval?: boolean
+          resource_type?: string
+          risk_level?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      jit_access_sessions: {
+        Row: {
+          access_level: string
+          approval_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          auto_approved: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          request_context: Json
+          requested_at: string
+          resource_id: string
+          resource_type: string
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          risk_level: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_level: string
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_approved?: boolean
+          created_at?: string
+          expires_at: string
+          id?: string
+          request_context?: Json
+          requested_at?: string
+          resource_id: string
+          resource_type: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          risk_level: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_level?: string
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_approved?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          request_context?: Json
+          requested_at?: string
+          resource_id?: string
+          resource_type?: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          risk_level?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mfa_challenge_tokens: {
+        Row: {
+          attempts: number
+          challenge_type: string
+          created_at: string
+          expires_at: string
+          id: string
+          max_attempts: number
+          metadata: Json
+          token_hash: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          challenge_type: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          max_attempts?: number
+          metadata?: Json
+          token_hash: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          challenge_type?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          max_attempts?: number
+          metadata?: Json
+          token_hash?: string
+          used_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -2845,6 +3055,10 @@ export type Database = {
         Args: { _action: string; _resource: string; _user_id: string }
         Returns: boolean
       }
+      expire_jit_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       export_audit_logs: {
         Args: { _end_date?: string; _format?: string; _start_date?: string }
         Returns: {
@@ -2889,6 +3103,10 @@ export type Database = {
       }
       has_enhanced_permission_v2: {
         Args: { _action: string; _resource: string; _user_id: string }
+        Returns: boolean
+      }
+      has_jit_access: {
+        Args: { _resource_id: string; _resource_type: string; _user_id: string }
         Returns: boolean
       }
       has_quantum_permission: {
