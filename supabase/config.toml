@@ -1,0 +1,10 @@
+project_id = "sehwyxblppthfjlndgnq"
+
+[functions.generate-quantum-keys]
+verify_jwt = false
+
+[functions.calculate-trust-scores]
+verify_jwt = false
+
+[functions.detect-anomalies]
+verify_jwt = false
