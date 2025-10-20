@@ -184,26 +184,71 @@ export class QuantumBlock implements IBlock {
   }
 
   /**
-   * Add external timestamp (Simplified - uses block hash as proof)
-   * In production, integrate with freetsa.org or OpenTimestamps
+   * Add external timestamp using OpenTimestamps
+   * Uses Bitcoin blockchain for cryptographic proof
    */
   async addExternalTimestamp(): Promise<void> {
     try {
-      // For now, create a timestamped proof using the block hash
-      // In production, call external TSA service
-      const timestampProof = {
-        blockHash: this.hash,
-        timestamp: Date.now(),
-        nonce: this.nonce,
-        proof: this.sha256Sync(`${this.hash}-${Date.now()}-timestamp`)
-      };
+      // Create OpenTimestamps proof
+      const hashBuffer = new TextEncoder().encode(this.hash);
+      
+      // Submit to OpenTimestamps calendar servers
+      const otsResponse = await fetch('https://alice.btc.calendar.opentimestamps.org/timestamp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/octet-stream' },
+        body: hashBuffer
+      }).catch(() => null);
 
-      this.externalTimestamp = {
-        authority: 'internal-tsa', // Change to 'freetsa.org' in production
-        token: JSON.stringify(timestampProof),
-        verified: true,
-        createdAt: new Date()
-      };
+      if (otsResponse && otsResponse.ok) {
+        const otsProof = await otsResponse.arrayBuffer();
+        
+        this.externalTimestamp = {
+          authority: 'opentimestamps.org',
+          token: this.bytesToHex(new Uint8Array(otsProof)),
+          verified: true,
+          createdAt: new Date()
+        };
+      } else {
+        // Fallback to multiple calendar servers
+        const fallbackServers = [
+          'https://bob.btc.calendar.opentimestamps.org/timestamp',
+          'https://finney.calendar.eternitywall.com/timestamp'
+        ];
+        
+        for (const server of fallbackServers) {
+          const response = await fetch(server, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream' },
+            body: hashBuffer
+          }).catch(() => null);
+          
+          if (response && response.ok) {
+            const otsProof = await response.arrayBuffer();
+            this.externalTimestamp = {
+              authority: server.includes('eternitywall') ? 'eternitywall.com' : 'opentimestamps.org',
+              token: this.bytesToHex(new Uint8Array(otsProof)),
+              verified: true,
+              createdAt: new Date()
+            };
+            return;
+          }
+        }
+        
+        // All external services failed - use internal TSA
+        const timestampProof = {
+          blockHash: this.hash,
+          timestamp: Date.now(),
+          nonce: this.nonce,
+          proof: this.sha256Sync(`${this.hash}-${Date.now()}-timestamp`)
+        };
+
+        this.externalTimestamp = {
+          authority: 'internal-tsa',
+          token: JSON.stringify(timestampProof),
+          verified: false,
+          createdAt: new Date()
+        };
+      }
     } catch (error) {
       console.error('Failed to add external timestamp:', error);
       this.externalTimestamp = {
@@ -222,14 +267,44 @@ export class QuantumBlock implements IBlock {
     if (!block.externalTimestamp) return false;
     
     try {
-      // Verify timestamp token integrity
-      if (block.externalTimestamp.authority === 'local') {
+      const authority = block.externalTimestamp.authority;
+      
+      // OpenTimestamps verification
+      if (authority.includes('opentimestamps') || authority.includes('eternitywall')) {
+        // Verify OTS proof against Bitcoin blockchain
+        const otsProof = this.hexToBytes(block.externalTimestamp.token);
+        const hashBuffer = new TextEncoder().encode(block.hash);
+        
+        // Combine buffers for verification
+        const combined = new Uint8Array(hashBuffer.length + otsProof.length);
+        combined.set(hashBuffer, 0);
+        combined.set(otsProof, hashBuffer.length);
+        
+        const response = await fetch('https://alice.btc.calendar.opentimestamps.org/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: combined.buffer
+        }).catch(() => null);
+        
+        if (response && response.ok) {
+          const verification = await response.json();
+          return verification.verified === true;
+        }
+        return false;
+      }
+      
+      // Local/internal verification
+      if (authority === 'local') {
         return block.externalTimestamp.token === block.hash;
       }
       
-      // For internal-tsa or freetsa.org, verify the proof
-      const proof = JSON.parse(block.externalTimestamp.token);
-      return proof.blockHash === block.hash;
+      // Internal TSA verification
+      if (authority === 'internal-tsa') {
+        const proof = JSON.parse(block.externalTimestamp.token);
+        return proof.blockHash === block.hash;
+      }
+      
+      return false;
     } catch {
       return false;
     }

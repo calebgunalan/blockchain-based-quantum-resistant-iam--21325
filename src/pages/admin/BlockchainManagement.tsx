@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BlockchainDashboard } from "@/components/admin/BlockchainDashboard";
 import { BlockchainPolicyManager } from "@/components/admin/BlockchainPolicyManager";
+import { SystemMonitoringDashboard } from "@/components/admin/SystemMonitoringDashboard";
 import Layout from "@/components/Layout";
 import { Shield } from "lucide-react";
 
@@ -18,13 +19,18 @@ export default function BlockchainManagement() {
           </p>
         </div>
 
-        <Tabs defaultValue="dashboard" className="space-y-6">
+        <Tabs defaultValue="monitoring" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="policies">Smart Policies</TabsTrigger>
             <TabsTrigger value="audit">Audit Trail</TabsTrigger>
             <TabsTrigger value="dids">DIDs</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="monitoring">
+            <SystemMonitoringDashboard />
+          </TabsContent>
 
           <TabsContent value="dashboard">
             <BlockchainDashboard />

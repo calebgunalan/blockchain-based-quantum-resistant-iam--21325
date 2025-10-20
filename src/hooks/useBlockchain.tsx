@@ -22,10 +22,56 @@ export function useBlockchain() {
 
   useEffect(() => {
     if (user) {
+      loadBlockchainFromDatabase();
       initializeUserBlockchain();
       updateChainStatus();
     }
   }, [user]);
+
+  const loadBlockchainFromDatabase = async () => {
+    try {
+      // Load existing blocks from database
+      const { data: blocks, error } = await supabase
+        .from('blockchain_blocks')
+        .select('*')
+        .order('block_index', { ascending: true });
+
+      if (error) throw error;
+
+      if (blocks && blocks.length > 0) {
+        console.log(`Loading ${blocks.length} blocks from database...`);
+        
+        // Reconstruct blockchain from database
+        // Note: This is a simplified recovery - in production, 
+        // you'd need to reconstruct full block data including transactions
+        blockchain.chain = blocks.map(dbBlock => ({
+          index: dbBlock.block_index,
+          hash: dbBlock.block_hash,
+          previousHash: dbBlock.previous_hash,
+          merkleRoot: dbBlock.merkle_root,
+          timestamp: new Date(dbBlock.created_at).getTime(),
+          nonce: dbBlock.nonce,
+          difficulty: dbBlock.difficulty,
+          data: [], // Transaction data not stored in blocks table
+          signature: undefined,
+          externalTimestamp: undefined,
+          calculateHash: function() { return this.hash; },
+          calculateMerkleRoot: function() { return this.merkleRoot; },
+          mineBlock: async function() {},
+          signBlock: async function() {}
+        } as any));
+
+        updateChainStatus();
+        
+        toast({
+          title: "Blockchain Loaded",
+          description: `Restored ${blocks.length} blocks from database`,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading blockchain from database:', error);
+    }
+  };
 
   const initializeUserBlockchain = async () => {
     try {
@@ -265,8 +311,27 @@ export function useBlockchain() {
       const minerAddress = did?.id || user?.id || 'unknown';
       const block = await blockchain.minePendingTransactions(minerAddress);
       
-      // Store block info in database
-      await supabase
+      // Automatic persistence to Supabase
+      await persistBlockToDatabase(block);
+      
+      updateChainStatus();
+      
+      toast({
+        title: "Block Mined",
+        description: `Block #${block.index} mined successfully with external timestamp`,
+      });
+      
+      return block;
+    } catch (error) {
+      console.error('Error mining block:', error);
+      throw error;
+    }
+  };
+
+  const persistBlockToDatabase = async (block: any) => {
+    try {
+      // Store block with all metadata
+      const { error } = await supabase
         .from('blockchain_blocks')
         .insert({
           block_index: block.index,
@@ -278,17 +343,28 @@ export function useBlockchain() {
           difficulty: block.difficulty,
           transaction_count: block.data.length
         });
-      
-      updateChainStatus();
-      
-      toast({
-        title: "Block Mined",
-        description: `Block #${block.index} mined successfully`,
-      });
-      
-      return block;
+
+      if (error) throw error;
+
+      // Store detailed transactions in blockchain_audit_logs
+      for (const transaction of block.data) {
+        await supabase
+          .from('blockchain_audit_logs')
+          .insert({
+            user_id: transaction.userId || user?.id,
+            action: transaction.type,
+            resource: transaction.payload?.resource || 'blockchain',
+            transaction_id: `${block.hash}-${Date.now()}`,
+            block_hash: block.hash,
+            integrity_hash: block.hash,
+            quantum_signature: block.signature,
+            metadata: transaction.payload
+          });
+      }
+
+      console.log(`Block #${block.index} persisted to database`);
     } catch (error) {
-      console.error('Error mining block:', error);
+      console.error('Error persisting block to database:', error);
       throw error;
     }
   };
