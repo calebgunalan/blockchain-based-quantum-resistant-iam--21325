@@ -1,4 +1,4 @@
-import { ensureSodiumReady, QuantumSignatures } from './quantum-crypto';
+import { PostQuantumSignatures } from './quantum-pqc';
 
 export interface QuantumBlock {
   index: number;
@@ -62,8 +62,6 @@ export class QuantumBlockchain {
    * Create the genesis block
    */
   private async createGenesisBlock(): Promise<void> {
-    await ensureSodiumReady();
-    
     const genesisBlock: QuantumBlock = {
       index: 0,
       timestamp: new Date(),
@@ -87,27 +85,31 @@ export class QuantumBlockchain {
    * Add a new transaction to the pending pool
    */
   async addTransaction(transaction: Omit<QuantumTransaction, 'quantumSignature' | 'integrity_hash'>): Promise<string> {
-    await ensureSodiumReady();
-    
-    // Generate quantum signature for transaction
-    const keyPair = await QuantumSignatures.generateKeyPair();
+    // Generate quantum signature for transaction using ML-DSA-65
+    const keyPair = await PostQuantumSignatures.generateKeyPair65();
     const transactionData = JSON.stringify({
       ...transaction,
       timestamp: transaction.timestamp.toISOString()
     });
-    const signature = QuantumSignatures.sign(
+    const signature = await PostQuantumSignatures.sign65(
       new TextEncoder().encode(transactionData),
       keyPair.privateKey
     );
     
-    // Calculate integrity hash
-    const sodium = require('libsodium-wrappers');
-    const integrityHash = sodium.crypto_generichash(32, new TextEncoder().encode(transactionData));
+    // Calculate integrity hash using SHA-256
+    const encoder = new TextEncoder();
+    const data = encoder.encode(transactionData);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const integrityHash = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
     
     const completeTxn: QuantumTransaction = {
       ...transaction,
-      quantumSignature: Buffer.from(await signature).toString('base64'),
-      integrity_hash: Buffer.from(integrityHash).toString('hex')
+      quantumSignature: Array.from(signature)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join(''),
+      integrity_hash: integrityHash
     };
     
     this.pendingTransactions.push(completeTxn);
@@ -118,7 +120,6 @@ export class QuantumBlockchain {
    * Mine a new block with pending transactions
    */
   async mineBlock(minerAddress: string): Promise<QuantumBlock> {
-    await ensureSodiumReady();
     
     const previousBlock = this.getLatestBlock();
     const transactions = [...this.pendingTransactions];
@@ -166,16 +167,19 @@ export class QuantumBlockchain {
    * Quantum-resistant proof of work algorithm
    */
   private async quantumProofOfWork(block: QuantumBlock): Promise<QuantumBlock> {
-    const sodium = require('libsodium-wrappers');
     const target = '0'.repeat(this.difficulty);
     
     while (true) {
       block.nonce++;
       block.hash = await this.calculateHash(block);
       
-      // Use quantum-safe hash function (BLAKE2b via libsodium)
-      const quantumHash = sodium.crypto_generichash(32, new TextEncoder().encode(block.hash));
-      const hashHex = Buffer.from(quantumHash).toString('hex');
+      // Use quantum-safe hash function (SHA-256)
+      const encoder = new TextEncoder();
+      const data = encoder.encode(block.hash);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashHex = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
       
       if (hashHex.startsWith(target)) {
         block.hash = hashHex;
@@ -196,9 +200,6 @@ export class QuantumBlockchain {
    * Calculate quantum-safe hash for a block
    */
   private async calculateHash(block: QuantumBlock): Promise<string> {
-    await ensureSodiumReady();
-    const sodium = require('libsodium-wrappers');
-    
     const blockData = JSON.stringify({
       index: block.index,
       timestamp: block.timestamp.toISOString(),
@@ -211,8 +212,12 @@ export class QuantumBlockchain {
       }))
     });
     
-    const hash = sodium.crypto_generichash(32, new TextEncoder().encode(blockData));
-    return Buffer.from(hash).toString('hex');
+    const encoder = new TextEncoder();
+    const data = encoder.encode(blockData);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
   }
 
   /**
@@ -223,8 +228,7 @@ export class QuantumBlockchain {
       return '0';
     }
     
-    await ensureSodiumReady();
-    const sodium = require('libsodium-wrappers');
+    const encoder = new TextEncoder();
     
     // Convert transactions to hashes
     let hashes = await Promise.all(
@@ -233,8 +237,11 @@ export class QuantumBlockchain {
           ...tx,
           timestamp: tx.timestamp.toISOString()
         });
-        const hash = sodium.crypto_generichash(32, new TextEncoder().encode(txData));
-        return Buffer.from(hash).toString('hex');
+        const data = encoder.encode(txData);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(hashBuffer))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
       })
     );
     
@@ -247,8 +254,13 @@ export class QuantumBlockchain {
         const right = i + 1 < hashes.length ? hashes[i + 1] : left;
         
         const combined = left + right;
-        const hash = sodium.crypto_generichash(32, new TextEncoder().encode(combined));
-        newLevel.push(Buffer.from(hash).toString('hex'));
+        const data = encoder.encode(combined);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        newLevel.push(
+          Array.from(new Uint8Array(hashBuffer))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('')
+        );
       }
       
       hashes = newLevel;
@@ -258,10 +270,10 @@ export class QuantumBlockchain {
   }
 
   /**
-   * Sign a block with quantum-resistant signature
+   * Sign a block with quantum-resistant signature (ML-DSA-65)
    */
   private async signBlock(block: QuantumBlock): Promise<string> {
-    const keyPair = await QuantumSignatures.generateKeyPair();
+    const keyPair = await PostQuantumSignatures.generateKeyPair65();
     const blockData = JSON.stringify({
       index: block.index,
       timestamp: block.timestamp.toISOString(),
@@ -270,12 +282,14 @@ export class QuantumBlockchain {
       hash: block.hash
     });
     
-    const signature = await QuantumSignatures.sign(
+    const signature = await PostQuantumSignatures.sign65(
       new TextEncoder().encode(blockData),
       keyPair.privateKey
     );
     
-    return Buffer.from(signature).toString('base64');
+    return Array.from(signature)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
   }
 
   /**
@@ -341,9 +355,12 @@ export class QuantumBlockchain {
         metadata: transaction.metadata
       });
       
-      const sodium = require('libsodium-wrappers');
-      const calculatedHash = sodium.crypto_generichash(32, new TextEncoder().encode(transactionData));
-      const calculatedHashHex = Buffer.from(calculatedHash).toString('hex');
+      const encoder = new TextEncoder();
+      const data = encoder.encode(transactionData);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const calculatedHashHex = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
       
       return calculatedHashHex === transaction.integrity_hash;
     } catch (error) {

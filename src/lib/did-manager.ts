@@ -1,4 +1,4 @@
-import { QuantumSignatures, QuantumKEM } from './quantum-crypto';
+import { PostQuantumSignatures, PostQuantumKEM } from './quantum-pqc';
 
 /**
  * Decentralized Identifier (DID) Format
@@ -37,9 +37,9 @@ export class DIDManager {
    * Create a new DID for a user
    */
   static async createDID(identifier: string): Promise<QuantumDID> {
-    // Generate quantum-resistant keys
-    const signatureKeyPair = await QuantumSignatures.generateKeyPair();
-    const kemKeyPair = await QuantumKEM.generateKeyPair();
+    // Generate quantum-resistant keys using ML-DSA-65 and ML-KEM-768
+    const signatureKeyPair = await PostQuantumSignatures.generateKeyPair65();
+    const kemKeyPair = await PostQuantumKEM.generateKeyPair768();
 
     // Generate unique DID address
     const address = await this.generateDIDAddress(identifier);
@@ -55,15 +55,19 @@ export class DIDManager {
       publicKey: [
         {
           id: `${didId}#keys-1`,
-          type: 'QuantumResistantSignatureKey2024',
+          type: 'ML-DSA-65-2024',
           controller: didId,
-          publicKeyHex: Buffer.from(signatureKeyPair.publicKey).toString('hex')
+          publicKeyHex: Array.from(signatureKeyPair.publicKey)
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('')
         },
         {
           id: `${didId}#keys-2`,
-          type: 'QuantumResistantEncryptionKey2024',
+          type: 'ML-KEM-768-2024',
           controller: didId,
-          publicKeyHex: Buffer.from(kemKeyPair.publicKey).toString('hex')
+          publicKeyHex: Array.from(kemKeyPair.publicKey)
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('')
         }
       ],
       authentication: [`${didId}#keys-1`],
@@ -120,7 +124,7 @@ export class DIDManager {
   }
 
   /**
-   * Verify DID ownership
+   * Verify DID ownership using ML-DSA-65
    */
   static async verifyDIDOwnership(
     did: string,
@@ -140,11 +144,13 @@ export class DIDManager {
         return false;
       }
 
-      // Verify signature
-      const publicKey = Uint8Array.from(Buffer.from(authKey.publicKeyHex, 'hex'));
+      // Verify signature using ML-DSA-65
+      const publicKey = new Uint8Array(
+        authKey.publicKeyHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))
+      );
       const challengeBytes = new TextEncoder().encode(challenge);
 
-      return await QuantumSignatures.verify(signature, challengeBytes, publicKey);
+      return await PostQuantumSignatures.verify65(signature, challengeBytes, publicKey);
     } catch (error) {
       console.error('Error verifying DID ownership:', error);
       return false;
@@ -172,9 +178,9 @@ export class DIDManager {
    * Rotate DID keys
    */
   static async rotateDIDKeys(did: QuantumDID): Promise<QuantumDID> {
-    // Generate new keys
-    const newSignatureKeyPair = await QuantumSignatures.generateKeyPair();
-    const newKemKeyPair = await QuantumKEM.generateKeyPair();
+    // Generate new keys using ML-DSA-65 and ML-KEM-768
+    const newSignatureKeyPair = await PostQuantumSignatures.generateKeyPair65();
+    const newKemKeyPair = await PostQuantumKEM.generateKeyPair768();
 
     // Keep old keys for a transition period, mark as revoked
     const oldKeys = did.publicKey.map(pk => ({
@@ -186,15 +192,19 @@ export class DIDManager {
     const newKeys = [
       {
         id: `${did.id}#keys-${Date.now()}-1`,
-        type: 'QuantumResistantSignatureKey2024',
+        type: 'ML-DSA-65-2024',
         controller: did.id,
-        publicKeyHex: Buffer.from(newSignatureKeyPair.publicKey).toString('hex')
+        publicKeyHex: Array.from(newSignatureKeyPair.publicKey)
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('')
       },
       {
         id: `${did.id}#keys-${Date.now()}-2`,
-        type: 'QuantumResistantEncryptionKey2024',
+        type: 'ML-KEM-768-2024',
         controller: did.id,
-        publicKeyHex: Buffer.from(newKemKeyPair.publicKey).toString('hex')
+        publicKeyHex: Array.from(newKemKeyPair.publicKey)
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('')
       }
     ];
 
@@ -213,19 +223,18 @@ export class DIDManager {
    * Generate unique DID address
    */
   private static async generateDIDAddress(identifier: string): Promise<string> {
-    const sodium = require('libsodium-wrappers');
-    await sodium.ready;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(identifier + Date.now());
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hash = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
 
-    const hash = sodium.crypto_generichash(
-      32,
-      new TextEncoder().encode(identifier + Date.now())
-    );
-
-    return Buffer.from(hash).toString('hex').substring(0, 40);
+    return hash.substring(0, 40);
   }
 
   /**
-   * Create DID proof
+   * Create DID proof using ML-DSA-65
    */
   static async createDIDProof(
     did: string,
@@ -233,10 +242,12 @@ export class DIDManager {
     challenge: string
   ): Promise<{ proof: string; proofPurpose: string; created: string }> {
     const challengeBytes = new TextEncoder().encode(challenge);
-    const signature = await QuantumSignatures.sign(challengeBytes, privateKey);
+    const signature = await PostQuantumSignatures.sign65(challengeBytes, privateKey);
 
     return {
-      proof: Buffer.from(signature).toString('hex'),
+      proof: Array.from(signature)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join(''),
       proofPurpose: 'authentication',
       created: new Date().toISOString()
     };

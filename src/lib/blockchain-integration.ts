@@ -1,6 +1,5 @@
 import { QuantumBlockchain, QuantumTransaction } from './quantum-blockchain';
 import { QuantumDID } from './did-manager';
-import { QuantumSignatures } from './quantum-crypto';
 import { BlockchainPolicyEngine, PolicyEvaluationContext } from './blockchain-policy-engine';
 
 /**
