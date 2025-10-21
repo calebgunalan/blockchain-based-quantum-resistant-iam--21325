@@ -333,6 +333,36 @@ export type Database = {
         }
         Relationships: []
       }
+      blockchain_archives: {
+        Row: {
+          archive_data: Json
+          archive_id: string
+          block_count: number
+          created_at: string
+          end_height: number
+          id: string
+          start_height: number
+        }
+        Insert: {
+          archive_data: Json
+          archive_id: string
+          block_count: number
+          created_at?: string
+          end_height: number
+          id?: string
+          start_height: number
+        }
+        Update: {
+          archive_data?: Json
+          archive_id?: string
+          block_count?: number
+          created_at?: string
+          end_height?: number
+          id?: string
+          start_height?: number
+        }
+        Relationships: []
+      }
       blockchain_audit_logs: {
         Row: {
           action: string

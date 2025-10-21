@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BlockchainDashboard } from "@/components/admin/BlockchainDashboard";
 import { BlockchainPolicyManager } from "@/components/admin/BlockchainPolicyManager";
 import { SystemMonitoringDashboard } from "@/components/admin/SystemMonitoringDashboard";
+import { BlockchainPruningManager } from "@/components/admin/BlockchainPruningManager";
 import Layout from "@/components/Layout";
 import { Shield } from "lucide-react";
 
@@ -24,6 +25,7 @@ export default function BlockchainManagement() {
             <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="policies">Smart Policies</TabsTrigger>
+            <TabsTrigger value="pruning">Pruning</TabsTrigger>
             <TabsTrigger value="audit">Audit Trail</TabsTrigger>
             <TabsTrigger value="dids">DIDs</TabsTrigger>
           </TabsList>
@@ -38,6 +40,10 @@ export default function BlockchainManagement() {
 
           <TabsContent value="policies">
             <BlockchainPolicyManager />
+          </TabsContent>
+
+          <TabsContent value="pruning">
+            <BlockchainPruningManager />
           </TabsContent>
 
           <TabsContent value="audit">

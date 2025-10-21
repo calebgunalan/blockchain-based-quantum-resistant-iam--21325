@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "next-themes";
+import { BrowserCompatibilityChecker } from "@/components/BrowserCompatibilityChecker";
 import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -28,6 +29,7 @@ import ModeratorUsers from './pages/admin/ModeratorUsers';
 import BlockchainManagement from './pages/admin/BlockchainManagement';
 import AdvancedSecurity from './pages/security/AdvancedSecurity';
 import ResourceAuth from './pages/ResourceAuth';
+import UserGuidePage from './pages/UserGuide';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -40,6 +42,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <BrowserCompatibilityChecker />
             <Layout>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -65,6 +68,7 @@ const App = () => (
               <Route path="/admin/blockchain" element={<BlockchainManagement />} />
               <Route path="/admin/zero-trust" element={<ZeroTrust />} />
               <Route path="/resources/auth" element={<ResourceAuth />} />
+              <Route path="/user-guide" element={<UserGuidePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
