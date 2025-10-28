@@ -9,7 +9,7 @@ import {
   PAMCheckoutResult,
   SessionActivity 
 } from '@/lib/privileged-access';
-import { QuantumRandom } from '@/lib/quantum-crypto';
+import { PQCMigration } from '@/lib/quantum-pqc-migration';
 import { toast } from 'sonner';
 
 export interface PrivilegedAccountData {
@@ -123,8 +123,8 @@ export function usePrivilegedAccess() {
     }
 
     try {
-      // Generate master key for encryption
-      const masterKey = await QuantumRandom.bytes(32);
+      // Generate master key for encryption using PQC
+      const masterKey = await PQCMigration.generateSecureRandom(32);
       
       // Create account using PAM library
       const account = await PrivilegedAccessManager.createPrivilegedAccount(
@@ -344,7 +344,7 @@ export function usePrivilegedAccess() {
       // to actually rotate the credentials
       const newCredentials = {
         username: account.account_name,
-        password: await QuantumRandom.string(16)
+        password: await PQCMigration.randomString(16)
       };
 
       // Retrieve master key

@@ -9,7 +9,7 @@
  * - Auditor-ready immutable audit trail
  */
 
-import * as pq from '@noble/post-quantum';
+import { ml_dsa65 } from '@noble/post-quantum/ml-dsa.js';
 
 // ============================================================================
 // Type Definitions
@@ -159,8 +159,7 @@ export class QuantumBlock implements IBlock {
    */
   async signBlock(secretKey: Uint8Array): Promise<void> {
     const message = new TextEncoder().encode(this.hash);
-    const mldsa = (pq as any).ml_dsa65;
-    const signature = mldsa.sign(secretKey, message);
+    const signature = ml_dsa65.sign(secretKey, message);
     this.signature = this.bytesToHex(signature);
   }
 
@@ -176,8 +175,7 @@ export class QuantumBlock implements IBlock {
     try {
       const message = new TextEncoder().encode(block.hash);
       const signature = this.hexToBytes(block.signature);
-      const mldsa = (pq as any).ml_dsa65;
-      return mldsa.verify(publicKey, message, signature);
+      return ml_dsa65.verify(publicKey, message, signature);
     } catch {
       return false;
     }
@@ -365,11 +363,12 @@ export class EnhancedQuantumBlockchain implements IBlockchain {
    * Initialize signing keys for blockchain
    */
   async initializeKeys(): Promise<void> {
-    const mldsa = (pq as any).ml_dsa65;
-    const secretKey = mldsa.keygen();
-    const publicKey = mldsa.getPublicKey(secretKey);
+    const keys = ml_dsa65.keygen();
     
-    this.signingKeys = { publicKey, secretKey };
+    this.signingKeys = { 
+      publicKey: keys.publicKey, 
+      secretKey: keys.secretKey 
+    };
   }
 
   /**

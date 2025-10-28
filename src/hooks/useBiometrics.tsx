@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { EnterpriseBiometrics, BiometricTemplate, BiometricMatchResult } from '@/lib/enterprise-biometrics';
-import { QuantumRandom } from '@/lib/quantum-crypto';
+import { PQCMigration } from '@/lib/quantum-pqc-migration';
 import { toast } from 'sonner';
 
 export interface BiometricData {
@@ -72,8 +72,8 @@ export function useBiometrics() {
 
     setEnrolling(true);
     try {
-      // Generate user-specific encryption key
-      const userKey = await QuantumRandom.bytes(32);
+      // Generate user-specific encryption key using PQC
+      const userKey = await PQCMigration.generateSecureRandom(32);
       
       // Extract and encrypt biometric template
       const result = await EnterpriseBiometrics.enrollBiometric(
@@ -222,7 +222,7 @@ export function useBiometrics() {
   const simulateImageCapture = async (type: 'fingerprint' | 'face'): Promise<Uint8Array> => {
     // Simulate biometric data capture
     // In a real implementation, this would interface with biometric sensors
-    const simulatedData = await QuantumRandom.bytes(type === 'fingerprint' ? 256 : 512);
+    const simulatedData = await PQCMigration.generateSecureRandom(type === 'fingerprint' ? 256 : 512);
     return simulatedData;
   };
 

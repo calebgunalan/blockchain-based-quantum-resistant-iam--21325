@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "./useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { QuantumSessionTokens } from "@/lib/quantum-crypto";
+import { PQCMigration } from "@/lib/quantum-pqc-migration";
 
 export interface APIKey {
   id: string;
@@ -53,9 +53,9 @@ export function useAPIKeys() {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      // Generate API key using quantum-safe method
-      const apiKey = await QuantumSessionTokens.generateAPIKey();
-      const keyHash = await QuantumSessionTokens.hashToken(apiKey);
+      // Generate API key using post-quantum cryptography
+      const apiKey = await PQCMigration.generateAPIKey();
+      const keyHash = await PQCMigration.hashToken(apiKey);
       const keyPrefix = apiKey.substring(0, 8) + '...';
 
       const { data, error } = await supabase
@@ -143,9 +143,9 @@ export function useAPIKeys() {
 
   const rotateAPIKey = async (keyId: string) => {
     try {
-      // Generate new API key
-      const newApiKey = await QuantumSessionTokens.generateAPIKey();
-      const newKeyHash = await QuantumSessionTokens.hashToken(newApiKey);
+      // Generate new API key using post-quantum cryptography
+      const newApiKey = await PQCMigration.generateAPIKey();
+      const newKeyHash = await PQCMigration.hashToken(newApiKey);
       const newKeyPrefix = newApiKey.substring(0, 8) + '...';
 
       const { data, error } = await supabase

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { QuantumCA, QuantumCertificate, CertificateRequest } from '@/lib/quantum-pki';
-import { QuantumSignatures } from '@/lib/quantum-crypto';
+import { PostQuantumSignatures } from '@/lib/quantum-pqc';
 
 export interface QuantumCertificateInfo {
   id: string;
@@ -88,8 +88,8 @@ export function useQuantumPKI() {
     validityDays: number = 365
   ): Promise<QuantumCertificateInfo> => {
     try {
-      // Generate key pair for the certificate
-      const keyPair = await QuantumSignatures.generateKeyPair();
+      // Generate post-quantum key pair for the certificate
+      const keyPair = await PostQuantumSignatures.generateKeyPair65();
       
       // Create certificate request
       const request: CertificateRequest = {
@@ -206,8 +206,8 @@ export function useQuantumPKI() {
       const privateKey = new Uint8Array(privateKeyData.split(',').map(Number));
       const messageBytes = new TextEncoder().encode(message);
 
-      // Sign with quantum-resistant algorithm
-      const signature = await QuantumSignatures.sign(messageBytes, privateKey);
+      // Sign with post-quantum algorithm (ML-DSA-65)
+      const signature = await PostQuantumSignatures.sign65(messageBytes, privateKey);
 
       return {
         signature: Array.from(signature).join(','),

@@ -1,9 +1,6 @@
-import * as pq from '@noble/post-quantum';
+import { ml_dsa65 } from '@noble/post-quantum/ml-dsa.js';
 import { EnhancedQuantumBlockchain } from './enhanced-quantum-blockchain';
 import { supabase } from '@/integrations/supabase/client';
-
-// Access ML-DSA-65 from noble/post-quantum
-const ml_dsa65 = (pq as any).ml_dsa65;
 
 /**
  * Phase 4: Compliance Report Generator

@@ -10,29 +10,28 @@
  * Performance optimized via pure JavaScript implementation.
  */
 
-// Import noble post-quantum algorithms
-import * as pq from '@noble/post-quantum';
+// Import specific submodules from noble post-quantum (must use .js extension)
+import { ml_kem768, ml_kem1024 } from '@noble/post-quantum/ml-kem.js';
+import { ml_dsa65, ml_dsa87 } from '@noble/post-quantum/ml-dsa.js';
 
-// Type definitions for ML-KEM and ML-DSA
+// Type definitions for ML-KEM and ML-DSA based on @noble/post-quantum API
 type MLKEMInstance = {
-  keygen: () => Uint8Array;
-  getPublicKey: (secretKey: Uint8Array) => Uint8Array;
+  keygen: (seed?: Uint8Array) => { publicKey: Uint8Array; secretKey: Uint8Array };
   encapsulate: (publicKey: Uint8Array) => { cipherText: Uint8Array; sharedSecret: Uint8Array };
   decapsulate: (ciphertext: Uint8Array, secretKey: Uint8Array) => Uint8Array;
 };
 
 type MLDSAInstance = {
-  keygen: () => Uint8Array;
-  getPublicKey: (secretKey: Uint8Array) => Uint8Array;
+  keygen: (seed?: Uint8Array) => { publicKey: Uint8Array; secretKey: Uint8Array };
   sign: (secretKey: Uint8Array, message: Uint8Array) => Uint8Array;
   verify: (publicKey: Uint8Array, message: Uint8Array, signature: Uint8Array) => boolean;
 };
 
-// Access the specific algorithm instances
-const mlkem768 = (pq as any).ml_kem768 as MLKEMInstance;
-const mlkem1024 = (pq as any).ml_kem1024 as MLKEMInstance;
-const mldsa65 = (pq as any).ml_dsa65 as MLDSAInstance;
-const mldsa87 = (pq as any).ml_dsa87 as MLDSAInstance;
+// Access the specific algorithm instances (directly imported above)
+const mlkem768 = ml_kem768;
+const mlkem1024 = ml_kem1024;
+const mldsa65 = ml_dsa65;
+const mldsa87 = ml_dsa87;
 
 /**
  * Convert Uint8Array to base64 for storage/transmission
@@ -65,12 +64,11 @@ export class PostQuantumKEM {
    * Shared Secret: 32 bytes
    */
   static async generateKeyPair768() {
-    const secretKey = mlkem768.keygen();
-    const publicKey = mlkem768.getPublicKey(secretKey);
+    const keys = mlkem768.keygen();
     
     return {
-      publicKey,
-      secretKey
+      publicKey: keys.publicKey,
+      secretKey: keys.secretKey
     };
   }
 
@@ -82,12 +80,11 @@ export class PostQuantumKEM {
    * Shared Secret: 32 bytes
    */
   static async generateKeyPair1024() {
-    const secretKey = mlkem1024.keygen();
-    const publicKey = mlkem1024.getPublicKey(secretKey);
+    const keys = mlkem1024.keygen();
     
     return {
-      publicKey,
-      secretKey
+      publicKey: keys.publicKey,
+      secretKey: keys.secretKey
     };
   }
 
@@ -182,12 +179,11 @@ export class PostQuantumSignatures {
    * Signature: ~3309 bytes (variable)
    */
   static async generateKeyPair65() {
-    const secretKey = mldsa65.keygen();
-    const publicKey = mldsa65.getPublicKey(secretKey);
+    const keys = mldsa65.keygen();
     
     return {
-      publicKey,
-      privateKey: secretKey
+      publicKey: keys.publicKey,
+      privateKey: keys.secretKey
     };
   }
 
@@ -198,12 +194,11 @@ export class PostQuantumSignatures {
    * Signature: ~4627 bytes (variable)
    */
   static async generateKeyPair87() {
-    const secretKey = mldsa87.keygen();
-    const publicKey = mldsa87.getPublicKey(secretKey);
+    const keys = mldsa87.keygen();
     
     return {
-      publicKey,
-      privateKey: secretKey
+      publicKey: keys.publicKey,
+      privateKey: keys.secretKey
     };
   }
 

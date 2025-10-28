@@ -1,5 +1,4 @@
-import { ensureSodiumReady } from './quantum-crypto';
-import * as sodium from 'libsodium-wrappers';
+import { PostQuantumKEM } from './quantum-pqc';
 
 export interface BiometricTemplate {
   id: string;
@@ -25,21 +24,47 @@ export interface BiometricMatchResult {
 
 export class EnterpriseBiometrics {
   private static async encryptTemplate(templateData: Uint8Array, userKey: Uint8Array): Promise<string> {
-    await ensureSodiumReady();
-    const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
-    const ciphertext = sodium.crypto_secretbox_easy(templateData, nonce, userKey);
-    const combined = new Uint8Array(nonce.length + ciphertext.length);
+    // Use AES-256-GCM for symmetric encryption
+    const nonce = crypto.getRandomValues(new Uint8Array(12));
+    const keyData = new Uint8Array(userKey.slice(0, 32));
+    const key = await crypto.subtle.importKey(
+      'raw',
+      keyData.buffer,
+      { name: 'AES-GCM' },
+      false,
+      ['encrypt']
+    );
+    const dataBuffer = new Uint8Array(templateData).buffer;
+    const encryptedData = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: nonce },
+      key,
+      dataBuffer
+    );
+    const combined = new Uint8Array(nonce.length + encryptedData.byteLength);
     combined.set(nonce);
-    combined.set(ciphertext, nonce.length);
-    return sodium.to_base64(combined);
+    combined.set(new Uint8Array(encryptedData), nonce.length);
+    return btoa(String.fromCharCode(...combined));
   }
 
   private static async decryptTemplate(encryptedData: string, userKey: Uint8Array): Promise<Uint8Array> {
-    await ensureSodiumReady();
-    const combined = sodium.from_base64(encryptedData);
-    const nonce = combined.slice(0, sodium.crypto_secretbox_NONCEBYTES);
-    const ciphertext = combined.slice(sodium.crypto_secretbox_NONCEBYTES);
-    return sodium.crypto_secretbox_open_easy(ciphertext, nonce, userKey);
+    const combined = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+    const nonce = combined.slice(0, 12);
+    const ciphertext = combined.slice(12);
+    const keyData = new Uint8Array(userKey.slice(0, 32));
+    const key = await crypto.subtle.importKey(
+      'raw',
+      keyData.buffer,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+    const cipherBuffer = new Uint8Array(ciphertext).buffer;
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: nonce },
+      key,
+      cipherBuffer
+    );
+    return new Uint8Array(plaintext);
   }
 
   static async extractFingerprintFeatures(fingerprintImage: Uint8Array): Promise<{
@@ -47,15 +72,8 @@ export class EnterpriseBiometrics {
     quality: number;
     featureCount: number;
   }> {
-    await ensureSodiumReady();
-    
-    // Simulate fingerprint feature extraction
-    // In a real implementation, this would use a proper biometric SDK
-    const features = new Uint8Array(256); // Typical minutiae template size
-        sodium.randombytes_buf(features.length); // Simulated feature extraction
-        for (let i = 0; i < features.length; i++) {
-          features[i] = Math.floor(Math.random() * 256);
-        }
+    // Simulate fingerprint feature extraction using quantum-safe random
+    const features = crypto.getRandomValues(new Uint8Array(256));
     
     const quality = Math.random() * 0.4 + 0.6; // Quality between 0.6-1.0
     const featureCount = Math.floor(Math.random() * 20) + 15; // 15-35 minutiae points
@@ -72,13 +90,8 @@ export class EnterpriseBiometrics {
     quality: number;
     landmarks: number;
   }> {
-    await ensureSodiumReady();
-    
-    // Simulate face feature extraction
-    const features = new Uint8Array(512); // Face embedding size
-        for (let i = 0; i < features.length; i++) {
-          features[i] = Math.floor(Math.random() * 256);
-        }
+    // Simulate face feature extraction using quantum-safe random
+    const features = crypto.getRandomValues(new Uint8Array(512));
     
     const quality = Math.random() * 0.3 + 0.7; // Quality between 0.7-1.0
     const landmarks = Math.floor(Math.random() * 20) + 68; // 68-88 facial landmarks
@@ -100,8 +113,6 @@ export class EnterpriseBiometrics {
     weights: Record<string, number>;
     confidence: number;
   }> {
-    await ensureSodiumReady();
-    
     const availableModalities = Object.keys(templates).filter(key => templates[key as keyof typeof templates]);
     const weights: Record<string, number> = {};
     
@@ -129,11 +140,8 @@ export class EnterpriseBiometrics {
       weights[key] = weights[key] / totalWeight;
     });
     
-    // Create fused template
-    const fusedTemplate = new Uint8Array(1024); // Larger template for multimodal
-        for (let i = 0; i < fusedTemplate.length; i++) {
-          fusedTemplate[i] = Math.floor(Math.random() * 256);
-        }
+    // Create fused template using quantum-safe random
+    const fusedTemplate = crypto.getRandomValues(new Uint8Array(1024));
     
     const confidence = Math.min(availableModalities.length * 0.2 + 0.4, 0.95);
     
@@ -234,7 +242,9 @@ export class EnterpriseBiometrics {
     }
     
     const encryptedTemplate = await this.encryptTemplate(template, userKey);
-    const templateId = sodium.to_hex(sodium.randombytes_buf(16));
+    const templateId = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
     
     return {
       templateId,
