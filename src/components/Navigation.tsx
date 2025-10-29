@@ -63,6 +63,11 @@ export default function Navigation() {
     label: "Zero Trust",
     adminOnly: true
   }, {
+    path: "/admin/account-lockouts",
+    icon: Lock,
+    label: "Account Lockouts",
+    adminOnly: true
+  }, {
     path: "/admin/permissions",
     icon: Settings,
     label: "Permissions",

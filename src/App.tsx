@@ -6,9 +6,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "next-themes";
 import { BrowserCompatibilityChecker } from "@/components/BrowserCompatibilityChecker";
+import { SessionTimeoutWarning } from "@/components/security/SessionTimeoutWarning";
 import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import QuantumSecurity from './pages/QuantumSecurity';
@@ -27,6 +30,7 @@ import AttackLogs from './pages/admin/AttackLogs';
 import SessionManagement from './pages/admin/SessionManagement';
 import ModeratorUsers from './pages/admin/ModeratorUsers';
 import BlockchainManagement from './pages/admin/BlockchainManagement';
+import AccountLockouts from './pages/admin/AccountLockouts';
 import AdvancedSecurity from './pages/security/AdvancedSecurity';
 import ResourceAuth from './pages/ResourceAuth';
 import UserGuidePage from './pages/UserGuide';
@@ -43,10 +47,13 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <BrowserCompatibilityChecker />
+            <SessionTimeoutWarning />
             <Layout>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/resource-auth" element={<ResourceAuth />} />
                 <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<Profile />} />
@@ -66,6 +73,7 @@ const App = () => (
         <Route path="/admin/session-management" element={<SessionManagement />} />
         <Route path="/admin/moderator-users" element={<ModeratorUsers />} />
               <Route path="/admin/blockchain" element={<BlockchainManagement />} />
+              <Route path="/admin/account-lockouts" element={<AccountLockouts />} />
               <Route path="/admin/zero-trust" element={<ZeroTrust />} />
               <Route path="/resources/auth" element={<ResourceAuth />} />
               <Route path="/user-guide" element={<UserGuidePage />} />

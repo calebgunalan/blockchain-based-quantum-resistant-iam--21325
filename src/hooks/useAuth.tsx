@@ -105,6 +105,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Check if account is locked before attempting login
+      const { data: isLocked, error: lockCheckError } = await supabase.rpc('is_account_locked' as any, {
+        user_email: email,
+      });
+
+      if (isLocked) {
+        const error = { message: 'Account is locked due to multiple failed login attempts. Please contact your administrator.' };
+        toast({
+          title: "Account locked",
+          description: error.message,
+          variant: "destructive"
+        });
+        return { error };
+      }
+
       // Capture device fingerprint
       const deviceFingerprint = {
         userAgent: navigator.userAgent,
@@ -121,6 +136,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
+        // Record failed login attempt
+        try {
+          await supabase.from('failed_login_attempts' as any).insert({
+            email,
+            user_agent: navigator.userAgent,
+          });
+
+          // Check if account should be locked now
+          await supabase.rpc('check_and_lock_account' as any, {
+            user_email: email,
+            max_attempts: 5,
+            lockout_duration: '30 minutes',
+          });
+        } catch (recordError) {
+          console.error('Error recording failed attempt:', recordError);
+        }
+
         toast({
           title: "Sign in failed",
           description: error.message,

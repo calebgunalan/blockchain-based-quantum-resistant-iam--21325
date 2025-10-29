@@ -140,8 +140,17 @@ export default function Auth() {
               Sign In as Admin
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            <p>Need an account? Contact your system administrator.</p>
+          <div className="mt-4 text-center space-y-2">
+            <Button
+              variant="link"
+              onClick={() => navigate("/forgot-password")}
+              className="text-sm"
+            >
+              Forgot your password?
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Need an account? Contact your system administrator.
+            </p>
           </div>
         </CardContent>
       </Card>
