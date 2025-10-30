@@ -9,92 +9,54 @@ export interface PasswordPolicy {
   require_lowercase: boolean;
   require_numbers: boolean;
   require_special_chars: boolean;
-  password_expiry_days?: number;
-  password_history_count?: number;
-  max_login_attempts: number;
+  max_age_days: number;
+  prevent_reuse_count: number;
+  lockout_threshold: number;
   lockout_duration_minutes: number;
-  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
 
 export function usePasswordPolicies() {
   const { user } = useAuth();
-  const [policies, setPolicies] = useState<PasswordPolicy[]>([]);
-  const [activePolicy, setActivePolicy] = useState<PasswordPolicy | null>(null);
+  const [policy, setPolicy] = useState<PasswordPolicy | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      fetchPolicies();
+      fetchPolicy();
     } else {
-      setPolicies([]);
-      setActivePolicy(null);
+      setPolicy(null);
       setLoading(false);
     }
   }, [user]);
 
-  const fetchPolicies = async () => {
+  const fetchPolicy = async () => {
     try {
       const { data, error } = await supabase
-        .from('password_policies')
+        .from('password_policies' as any)
         .select('*')
-        .order('created_at', { ascending: false });
+        .single();
 
-      if (error) throw error;
-
-      setPolicies(data || []);
-      setActivePolicy(data?.find(p => p.is_active) || null);
+      if (error && error.code !== 'PGRST116') throw error;
+      if (data) setPolicy(data as PasswordPolicy);
     } catch (error) {
-      console.error('Error fetching password policies:', error);
-      setPolicies([]);
-      setActivePolicy(null);
+      console.error('Error fetching password policy:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const createPolicy = async (policyData: Omit<PasswordPolicy, 'id' | 'created_at' | 'updated_at'>) => {
+  const updatePolicy = async (updates: Partial<PasswordPolicy>) => {
     try {
       const { data, error } = await supabase
-        .from('password_policies')
-        .insert(policyData)
+        .from('password_policies' as any)
+        .upsert(updates)
         .select()
         .single();
 
       if (error) throw error;
-
-      setPolicies(prev => [data, ...prev]);
-      if (data.is_active) {
-        setActivePolicy(data);
-      }
-      return data;
-    } catch (error) {
-      console.error('Error creating password policy:', error);
-      throw error;
-    }
-  };
-
-  const updatePolicy = async (policyId: string, updates: Partial<PasswordPolicy>) => {
-    try {
-      const { data, error } = await supabase
-        .from('password_policies')
-        .update(updates)
-        .eq('id', policyId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setPolicies(prev => 
-        prev.map(policy => 
-          policy.id === policyId ? data : policy
-        )
-      );
-
-      if (data.is_active) {
-        setActivePolicy(data);
-      }
+      if (data) setPolicy(data as PasswordPolicy);
       return data;
     } catch (error) {
       console.error('Error updating password policy:', error);
@@ -102,100 +64,35 @@ export function usePasswordPolicies() {
     }
   };
 
-  const activatePolicy = async (policyId: string) => {
-    try {
-      // Deactivate all policies first
-      await supabase
-        .from('password_policies')
-        .update({ is_active: false })
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all
-
-      // Activate the selected policy
-      const { data, error } = await supabase
-        .from('password_policies')
-        .update({ is_active: true })
-        .eq('id', policyId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setPolicies(prev => 
-        prev.map(policy => ({
-          ...policy,
-          is_active: policy.id === policyId
-        }))
-      );
-      setActivePolicy(data);
-      return data;
-    } catch (error) {
-      console.error('Error activating password policy:', error);
-      throw error;
-    }
-  };
-
   const validatePassword = (password: string): { isValid: boolean; errors: string[] } => {
-    if (!activePolicy) {
-      return { isValid: true, errors: [] };
-    }
-
     const errors: string[] = [];
+    
+    if (!policy) return { isValid: true, errors: [] };
 
-    if (password.length < activePolicy.min_length) {
-      errors.push(`Password must be at least ${activePolicy.min_length} characters long`);
+    if (password.length < policy.min_length) {
+      errors.push(`Password must be at least ${policy.min_length} characters long`);
     }
-
-    if (activePolicy.require_uppercase && !/[A-Z]/.test(password)) {
+    if (policy.require_uppercase && !/[A-Z]/.test(password)) {
       errors.push('Password must contain at least one uppercase letter');
     }
-
-    if (activePolicy.require_lowercase && !/[a-z]/.test(password)) {
+    if (policy.require_lowercase && !/[a-z]/.test(password)) {
       errors.push('Password must contain at least one lowercase letter');
     }
-
-    if (activePolicy.require_numbers && !/\d/.test(password)) {
+    if (policy.require_numbers && !/[0-9]/.test(password)) {
       errors.push('Password must contain at least one number');
     }
-
-    if (activePolicy.require_special_chars && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    if (policy.require_special_chars && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
       errors.push('Password must contain at least one special character');
     }
 
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  };
-
-  const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
-    let score = 0;
-    
-    if (password.length >= 8) score += 1;
-    if (password.length >= 12) score += 1;
-    if (/[a-z]/.test(password)) score += 1;
-    if (/[A-Z]/.test(password)) score += 1;
-    if (/\d/.test(password)) score += 1;
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
-
-    const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
-    const colors = ['destructive', 'destructive', 'secondary', 'secondary', 'default', 'default'];
-
-    return {
-      score,
-      label: labels[score] || 'Very Weak',
-      color: colors[score] || 'destructive'
-    };
+    return { isValid: errors.length === 0, errors };
   };
 
   return {
-    policies,
-    activePolicy,
+    policy,
     loading,
-    fetchPolicies,
-    createPolicy,
     updatePolicy,
-    activatePolicy,
     validatePassword,
-    getPasswordStrength
+    refetch: fetchPolicy
   };
 }
