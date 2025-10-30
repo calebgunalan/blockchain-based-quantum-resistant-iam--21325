@@ -24,7 +24,7 @@ export type Database = {
           failure_reason: string | null
           geolocation: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           mfa_method: string | null
           required_mfa_level: string
           risk_factors: Json
@@ -42,7 +42,7 @@ export type Database = {
           failure_reason?: string | null
           geolocation?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           mfa_method?: string | null
           required_mfa_level: string
           risk_factors?: Json
@@ -60,7 +60,7 @@ export type Database = {
           failure_reason?: string | null
           geolocation?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           mfa_method?: string | null
           required_mfa_level?: string
           risk_factors?: Json
@@ -212,7 +212,7 @@ export type Database = {
           quantum_protected: boolean | null
           response_time_ms: number | null
           severity: string
-          source_ip: unknown | null
+          source_ip: unknown
           system_response: Json
           target_resource: string | null
           user_agent: string | null
@@ -227,7 +227,7 @@ export type Database = {
           quantum_protected?: boolean | null
           response_time_ms?: number | null
           severity?: string
-          source_ip?: unknown | null
+          source_ip?: unknown
           system_response?: Json
           target_resource?: string | null
           user_agent?: string | null
@@ -242,7 +242,7 @@ export type Database = {
           quantum_protected?: boolean | null
           response_time_ms?: number | null
           severity?: string
-          source_ip?: unknown | null
+          source_ip?: unknown
           system_response?: Json
           target_resource?: string | null
           user_agent?: string | null
@@ -255,7 +255,7 @@ export type Database = {
           created_at: string
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           resource: string
           resource_id: string | null
           user_agent: string | null
@@ -266,7 +266,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource: string
           resource_id?: string | null
           user_agent?: string | null
@@ -277,7 +277,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource?: string
           resource_id?: string | null
           user_agent?: string | null
@@ -1126,8 +1126,8 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
-          ip_address: unknown | null
-          ip_range: unknown | null
+          ip_address: unknown
+          ip_range: unknown
           is_active: boolean
           name: string
           rule_type: string
@@ -1140,8 +1140,8 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
-          ip_address?: unknown | null
-          ip_range?: unknown | null
+          ip_address?: unknown
+          ip_range?: unknown
           is_active?: boolean
           name: string
           rule_type: string
@@ -1154,8 +1154,8 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
-          ip_address?: unknown | null
-          ip_range?: unknown | null
+          ip_address?: unknown
+          ip_range?: unknown
           is_active?: boolean
           name?: string
           rule_type?: string
@@ -1689,7 +1689,7 @@ export type Database = {
           is_blocked: boolean
           metadata: Json | null
           severity: string
-          source_ip: unknown | null
+          source_ip: unknown
           target_resource: string | null
           target_user_id: string | null
         }
@@ -1702,7 +1702,7 @@ export type Database = {
           is_blocked?: boolean
           metadata?: Json | null
           severity: string
-          source_ip?: unknown | null
+          source_ip?: unknown
           target_resource?: string | null
           target_user_id?: string | null
         }
@@ -1715,7 +1715,7 @@ export type Database = {
           is_blocked?: boolean
           metadata?: Json | null
           severity?: string
-          source_ip?: unknown | null
+          source_ip?: unknown
           target_resource?: string | null
           target_user_id?: string | null
         }
@@ -2184,7 +2184,7 @@ export type Database = {
           id: string
           quantum_protected: boolean
           severity: string
-          source_ip: unknown | null
+          source_ip: unknown
           target_resource: string | null
         }
         Insert: {
@@ -2195,7 +2195,7 @@ export type Database = {
           id?: string
           quantum_protected?: boolean
           severity: string
-          source_ip?: unknown | null
+          source_ip?: unknown
           target_resource?: string | null
         }
         Update: {
@@ -2206,7 +2206,7 @@ export type Database = {
           id?: string
           quantum_protected?: boolean
           severity?: string
-          source_ip?: unknown | null
+          source_ip?: unknown
           target_resource?: string | null
         }
         Relationships: []
@@ -2494,7 +2494,7 @@ export type Database = {
           device_type: string | null
           expires_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_trusted: boolean
           last_used_at: string | null
           user_agent: string | null
@@ -2507,7 +2507,7 @@ export type Database = {
           device_type?: string | null
           expires_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_trusted?: boolean
           last_used_at?: string | null
           user_agent?: string | null
@@ -2520,7 +2520,7 @@ export type Database = {
           device_type?: string | null
           expires_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_trusted?: boolean
           last_used_at?: string | null
           user_agent?: string | null
@@ -2962,7 +2962,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_active: boolean
           last_activity: string
           location_city: string | null
@@ -2975,7 +2975,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_activity?: string
           location_city?: string | null
@@ -2988,7 +2988,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_activity?: string
           location_city?: string | null
@@ -3049,7 +3049,7 @@ export type Database = {
           created_at: string | null
           details: Json | null
           id: string | null
-          ip_address: unknown | null
+          ip_address: unknown
           log_type: string | null
           resource: string | null
           resource_id: string | null
@@ -3077,18 +3077,12 @@ export type Database = {
         Args: { _current_context?: Json; _user_id: string }
         Returns: Json
       }
-      calculate_network_trust: {
-        Args: { user_ip: unknown }
-        Returns: number
-      }
+      calculate_network_trust: { Args: { user_ip: unknown }; Returns: number }
       check_user_group_permissions: {
         Args: { _action: string; _resource: string; _user_id: string }
         Returns: boolean
       }
-      expire_jit_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      expire_jit_sessions: { Args: never; Returns: number }
       export_audit_logs: {
         Args: { _end_date?: string; _format?: string; _start_date?: string }
         Returns: {
@@ -3111,18 +3105,9 @@ export type Database = {
         }
         Returns: string
       }
-      get_effective_user_role: {
-        Args: { _user_id: string }
-        Returns: string
-      }
-      get_location_from_ip: {
-        Args: { ip_address: unknown }
-        Returns: Json
-      }
-      get_user_id_from_folder: {
-        Args: { file_path: string }
-        Returns: string
-      }
+      get_effective_user_role: { Args: { _user_id: string }; Returns: string }
+      get_location_from_ip: { Args: { ip_address: unknown }; Returns: Json }
+      get_user_id_from_folder: { Args: { file_path: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["system_role"]
